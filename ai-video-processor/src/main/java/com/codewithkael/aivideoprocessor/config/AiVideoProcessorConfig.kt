@@ -1,7 +1,12 @@
 package com.codewithkael.aivideoprocessor.config
 
-import android.graphics.Bitmap
-import android.graphics.Color
+import com.codewithkael.aivideoprocessor.config.blur.BlurBackgroundConfig
+import com.codewithkael.aivideoprocessor.config.replace.ReplaceBackgroundConfig
+import com.codewithkael.aivideoprocessor.config.shared.WatermarkPosition
+import com.codewithkael.aivideoprocessor.config.watermark.WatermarkConfig
+
+// Shared enums
+package com.codewithkael.aivideoprocessor.config.shared
 
 enum class BackgroundScaleType {
     FIT,
@@ -17,35 +22,8 @@ enum class WatermarkPosition {
     CENTER
 }
 
-data class BlurBackgroundConfig(
-    val enabled: Boolean = false,
-    val blurRadius: Float = 18f,
-    val maxBlurFps: Int = 30,
-    val minPersonConfidence: Float = 0.5f
-)
-
-data class ReplaceBackgroundConfig(
-    val enabled: Boolean = false,
-    val backgroundBitmap: Bitmap? = null,
-    val backgroundColor: Int? = null,
-    val scaleType: BackgroundScaleType = BackgroundScaleType.CROP,
-    val minPersonConfidence: Float = 0.5f,
-    val featherRadius: Float = 4f
-)
-
-data class WatermarkConfig(
-    val enabled: Boolean = false,
-    val bitmap: Bitmap? = null,
-    val bitmapScale: Float = 0.15f,
-    val text: String? = null,
-    val textSizeSp: Float = 14f,
-    val textColor: Int = Color.WHITE,
-    val textShadowColor: Int = Color.BLACK,
-    val textShadowRadius: Float = 3f,
-    val position: WatermarkPosition = WatermarkPosition.BOTTOM_RIGHT,
-    val marginDp: Float = 8f,
-    val alpha: Float = 0.8f
-)
+// Top-level config
+package com.codewithkael.aivideoprocessor.config
 
 data class AiVideoProcessorConfig(
     val blurBackground: BlurBackgroundConfig = BlurBackgroundConfig(),
