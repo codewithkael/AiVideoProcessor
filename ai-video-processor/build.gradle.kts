@@ -37,6 +37,4 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 
-    // LibYUV from Maven Central (replaces local core-0.0.7.aar)
-    implementation("io.github.zncmn:libyuv:0.0.7")
 }
