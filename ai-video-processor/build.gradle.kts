@@ -28,7 +28,7 @@ android {
 }
 
 dependencies {
-    // WebRTC - use a widely available version
+    // WebRTC - Mesibo
     implementation("com.mesibo.api:webrtc:1.0.5")
 
     // ML Kit segmentation
@@ -37,6 +37,6 @@ dependencies {
     // Coroutines
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
 
-    // Local AAR for YUV/bitmap helpers
-    implementation(files("libs/core-0.0.7.aar"))
+    // LibYUV from Maven Central (replaces local core-0.0.7.aar)
+    implementation("io.github.zncmn:libyuv:0.0.7")
 }
