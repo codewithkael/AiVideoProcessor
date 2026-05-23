@@ -2,13 +2,11 @@ package com.codewithkael.aivideoprocessor.frame
 
 import android.graphics.Bitmap
 import com.codewithkael.aivideoprocessor.config.AiVideoProcessorConfig
-import com.codewithkael.aivideoprocessor.config.BlurBackgroundConfig
-import com.codewithkael.aivideoprocessor.config.ReplaceBackgroundConfig
-import com.codewithkael.aivideoprocessor.config.WatermarkConfig
-import com.codewithkael.aivideoprocessor.effect.VideoEffect
 import com.codewithkael.aivideoprocessor.effect.BlurBackgroundEffect
 import com.codewithkael.aivideoprocessor.effect.ReplaceBackgroundEffect
+import com.codewithkael.aivideoprocessor.effect.VideoEffect
 import com.codewithkael.aivideoprocessor.effect.WatermarkEffect
+import com.codewithkael.aivideoprocessor.effect.watermark.WatermarkDrawer
 import com.codewithkael.aivideoprocessor.ml.SegmentationEngine
 
 class FrameProcessor(
@@ -61,7 +59,7 @@ class FrameProcessor(
 
 data class FrameProcessingHelpers(
     val segmentationEngineFactory: () -> SegmentationEngine,
-    val watermarkDrawer: com.codewithkael.aivideoprocessor.effect.WatermarkDrawer
+    val watermarkDrawer: WatermarkDrawer
 )
 
 interface FrameConverters {
