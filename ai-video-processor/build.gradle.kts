@@ -21,7 +21,7 @@ android {
 
 dependencies {
     // WebRTC - use a widely available version
-    implementation("org.webrtc:google-webrtc:1.0.32006")
+    implementation("com.mesibo.api:webrtc:1.0.5")
 
     // ML Kit segmentation
     implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta3")
