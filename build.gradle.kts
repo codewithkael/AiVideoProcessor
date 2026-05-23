@@ -1,5 +1,6 @@
 plugins {
-    // Root project: keep empty for now; module-specific plugins are in ai-video-processor/build.gradle.kts
+    id("com.android.library")
+    id("org.jetbrains.kotlin.android")
 }
 
 allprojects {
