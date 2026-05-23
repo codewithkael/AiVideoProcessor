@@ -1,9 +1,10 @@
 package com.codewithkael.aivideoprocessor.effect
 
 import android.graphics.Bitmap
-import com.codewithkael.aivideoprocessor.config.BlurBackgroundConfig
-import com.codewithkael.aivideoprocessor.config.ReplaceBackgroundConfig
-import com.codewithkael.aivideoprocessor.config.WatermarkConfig
+import com.codewithkael.aivideoprocessor.config.blur.BlurBackgroundConfig
+import com.codewithkael.aivideoprocessor.config.replace.ReplaceBackgroundConfig
+import com.codewithkael.aivideoprocessor.config.watermark.WatermarkConfig
+import com.codewithkael.aivideoprocessor.effect.watermark.WatermarkDrawer
 import com.codewithkael.aivideoprocessor.ml.SegmentationEngine
 
 interface VideoEffect {
@@ -28,10 +29,6 @@ class ReplaceBackgroundEffect(
         // TODO: Implement background replacement using segmentationEngine and config
         return input
     }
-}
-
-interface WatermarkDrawer {
-    fun drawWatermark(input: Bitmap, config: WatermarkConfig): Bitmap
 }
 
 class WatermarkEffect(
