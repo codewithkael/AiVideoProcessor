@@ -1,5 +1,6 @@
 package com.codewithkael.aivideoprocessor.frame
 
+import android.content.Context
 import android.graphics.Bitmap
 import com.codewithkael.aivideoprocessor.config.AiVideoProcessorConfig
 import com.codewithkael.aivideoprocessor.effect.BlurBackgroundEffect
@@ -30,8 +31,9 @@ class FrameProcessor(
                 if (config.blurBackground.enabled) {
                     add(
                         BlurBackgroundEffect(
+                            helpers.appContext,
                             config.blurBackground,
-                            helpers.segmentationEngineFactory()
+                            helpers.segmentationEngineFactory(),
                         )
                     )
                 }
@@ -58,6 +60,7 @@ class FrameProcessor(
 }
 
 data class FrameProcessingHelpers(
+    val appContext: Context,
     val segmentationEngineFactory: () -> SegmentationEngine,
     val watermarkDrawer: WatermarkDrawer
 )
