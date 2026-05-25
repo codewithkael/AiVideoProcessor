@@ -7,59 +7,50 @@ import com.codewithkael.aivideoprocessor.config.replace.BackgroundScaleMode
 import com.codewithkael.aivideoprocessor.config.replace.ReplaceBackgroundConfig
 import com.codewithkael.aivideoprocessor.ml.SegmentationEngine
 import com.codewithkael.aivideoprocessor.ml.SegmentationMask
-import kotlinx.coroutines.suspendCancellableCoroutine
-import kotlin.coroutines.resume
 
 class BackgroundReplaceEffect(
     private val segmentationEngine: SegmentationEngine,
     private val config: ReplaceBackgroundConfig
 ) {
-    suspend fun apply(input: Bitmap): Bitmap = suspendCancellableCoroutine { cont ->
+    suspend fun apply(input: Bitmap): Bitmap {
         if (config.backgroundBitmap == null) {
-            cont.resume(input)
-            return@suspendCancellableCoroutine
+            return input
         }
 
         val background = config.backgroundBitmap!!
+        val mask: SegmentationMask = segmentationEngine.segment(input)
 
-        segmentationEngine.segmentAsync(input) { mask: SegmentationMask? ->
-            if (mask == null) {
-                cont.resume(input)
-                return@segmentAsync
-            }
+        val width = input.width
+        val height = input.height
 
-            val width = input.width
-            val height = input.height
-
-            val bgPrepared = when (config.scaleMode) {
-                BackgroundScaleMode.CENTER_CROP -> centerCrop(background, width, height)
-                BackgroundScaleMode.STRETCH -> Bitmap.createScaledBitmap(background, width, height, true)
-            }
-
-            val output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
-
-            val total = width * height
-            val finalPixels = IntArray(total)
-
-            val origPix = IntArray(total)
-            val bgPix = IntArray(total)
-
-            input.getPixels(origPix, 0, width, 0, 0, width, height)
-            bgPrepared.getPixels(bgPix, 0, width, 0, 0, width, height)
-
-            val threshold = config.minPersonConfidence
-
-            for (y in 0 until height) {
-                for (x in 0 until width) {
-                    val index = y * width + x
-                    val isForeground = mask.isForeground(x, y, threshold)
-                    finalPixels[index] = if (isForeground) origPix[index] else bgPix[index]
-                }
-            }
-
-            output.setPixels(finalPixels, 0, width, 0, 0, width, height)
-            cont.resume(output)
+        val bgPrepared = when (config.scaleMode) {
+            BackgroundScaleMode.CENTER_CROP -> centerCrop(background, width, height)
+            BackgroundScaleMode.STRETCH -> Bitmap.createScaledBitmap(background, width, height, true)
         }
+
+        val output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+
+        val total = width * height
+        val finalPixels = IntArray(total)
+
+        val origPix = IntArray(total)
+        val bgPix = IntArray(total)
+
+        input.getPixels(origPix, 0, width, 0, 0, width, height)
+        bgPrepared.getPixels(bgPix, 0, width, 0, 0, width, height)
+
+        val threshold = config.minPersonConfidence
+
+        for (y in 0 until height) {
+            for (x in 0 until width) {
+                val index = y * width + x
+                val isForeground = mask.isForeground(x, y, threshold)
+                finalPixels[index] = if (isForeground) origPix[index] else bgPix[index]
+            }
+        }
+
+        output.setPixels(finalPixels, 0, width, 0, 0, width, height)
+        return output
     }
 
     private fun centerCrop(source: Bitmap, targetWidth: Int, targetHeight: Int): Bitmap {
