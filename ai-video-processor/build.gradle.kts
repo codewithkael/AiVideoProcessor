@@ -37,4 +37,7 @@ dependencies {
     // Coroutines - align with Kotlin compiler 2.0.x used by JitPack
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.8.1")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.8.1")
+
+    // LibYUV-Android for YUV<->ARGB conversions
+    implementation("io.github.crow-misia.libyuv:libyuv-android:0.43.2")
 }
