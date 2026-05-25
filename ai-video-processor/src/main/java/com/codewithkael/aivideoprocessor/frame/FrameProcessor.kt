@@ -11,14 +11,25 @@ import com.codewithkael.aivideoprocessor.effect.watermark.WatermarkDrawer
 import com.codewithkael.aivideoprocessor.ml.SegmentationEngine
 
 class FrameProcessor(
-    private val effects: List<VideoEffect>
+    initialEffects: List<VideoEffect>
 ) {
+    @Volatile
+    private var effects: List<VideoEffect> = initialEffects
+
     suspend fun process(input: Bitmap): Bitmap {
         var current = input
-        for (effect in effects) {
+        val currentEffects = effects // Local reference for thread safety
+        for (effect in currentEffects) {
             current = effect.apply(current)
         }
         return current
+    }
+
+    fun updateConfig(
+        config: AiVideoProcessorConfig,
+        helpers: FrameProcessingHelpers
+    ) {
+        effects = createEffectsFromConfig(config, helpers)
     }
 
     companion object {
@@ -26,34 +37,38 @@ class FrameProcessor(
             config: AiVideoProcessorConfig,
             helpers: FrameProcessingHelpers
         ): FrameProcessor {
-            val effects = buildList {
-                if (config.blurBackground.enabled) {
-                    add(
-                        BlurBackgroundEffect(
-                            helpers.appContext,
-                            config.blurBackground,
-                            helpers.segmentationEngineFactory(),
-                        )
+            return FrameProcessor(createEffectsFromConfig(config, helpers))
+        }
+
+        private fun createEffectsFromConfig(
+            config: AiVideoProcessorConfig,
+            helpers: FrameProcessingHelpers
+        ): List<VideoEffect> = buildList {
+            if (config.blurBackground.enabled) {
+                add(
+                    BlurBackgroundEffect(
+                        helpers.appContext,
+                        config.blurBackground,
+                        helpers.segmentationEngineFactory(),
                     )
-                }
-                if (config.replaceBackground.enabled) {
-                    add(
-                        ReplaceBackgroundEffect(
-                            config.replaceBackground,
-                            helpers.segmentationEngineFactory()
-                        )
-                    )
-                }
-                if (config.watermark.enabled) {
-                    add(
-                        WatermarkEffect(
-                            config.watermark,
-                            helpers.watermarkDrawer
-                        )
-                    )
-                }
+                )
             }
-            return FrameProcessor(effects)
+            if (config.replaceBackground.enabled) {
+                add(
+                    ReplaceBackgroundEffect(
+                        config.replaceBackground,
+                        helpers.segmentationEngineFactory()
+                    )
+                )
+            }
+            if (config.watermark.enabled) {
+                add(
+                    WatermarkEffect(
+                        config.watermark,
+                        helpers.watermarkDrawer
+                    )
+                )
+            }
         }
     }
 }

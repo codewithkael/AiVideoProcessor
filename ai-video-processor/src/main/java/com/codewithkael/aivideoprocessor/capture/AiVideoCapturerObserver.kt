@@ -33,6 +33,14 @@ class AiVideoCapturerObserver(
     @Volatile
     private var isProcessing = false
 
+    /**
+     * Updates the processor configuration in real-time.
+     * Call this when you change filter settings in your UI.
+     */
+    fun updateConfig(newConfig: AiVideoProcessorConfig) {
+        frameProcessor.updateConfig(newConfig, helpers)
+    }
+
     override fun onCapturerStarted(success: Boolean) {
         downstream.onCapturerStarted(success)
     }
