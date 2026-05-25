@@ -29,7 +29,7 @@ android {
 
 dependencies {
     // WebRTC - Mesibo
-    implementation("com.mesibo.api:webrtc:1.1.10")
+    implementation("com.mesibo.api:webrtc:1.0.5")
 
     // ML Kit segmentation
     implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta3")
