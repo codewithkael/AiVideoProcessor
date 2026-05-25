@@ -2,7 +2,6 @@ package com.codewithkael.aivideoprocessor.effect.blur
 
 import android.content.Context
 import android.graphics.Bitmap
-import androidx.core.graphics.createBitmap
 import com.codewithkael.aivideoprocessor.config.blur.BlurBackgroundConfig
 import com.codewithkael.aivideoprocessor.effect.VideoEffect
 import com.codewithkael.aivideoprocessor.ml.SegmentationEngine
@@ -31,7 +30,7 @@ class BlurBackgroundEffect(
             .forceCopy(true)
             .blur(input)
 
-        val output = createBitmap(width, height)
+        val output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
 
         val total = width * height
         val finalPixels = IntArray(total)
