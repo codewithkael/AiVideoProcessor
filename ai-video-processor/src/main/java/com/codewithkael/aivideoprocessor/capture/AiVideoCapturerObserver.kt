@@ -10,19 +10,19 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
-import org.webrtc.CameraVideoCapturer
+import org.webrtc.CapturerObserver
 import org.webrtc.VideoFrame
 
 /**
- * Drop-in [CameraVideoCapturer.CapturerObserver] that applies AI video effects
+ * Drop-in [CapturerObserver] that applies AI video effects
  * (blur background, replace background, watermark) before forwarding frames
  * to the downstream observer.
  */
 class AiVideoCapturerObserver(
     private val context: Context,
-    private val downstream: CameraVideoCapturer.CapturerObserver,
+    private val downstream: CapturerObserver,
     private val config: AiVideoProcessorConfig
-) : CameraVideoCapturer.CapturerObserver {
+) : CapturerObserver {
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -50,8 +50,9 @@ class AiVideoCapturerObserver(
         isProcessing = true
 
         scope.launch {
-            val yuv = YuvFrame(frame, YuvFrame.PROCESSING_NONE, frame.timestampNs)
-            val bitmap = yuv.bitmap
+            val yuv = YuvFrame()
+            yuv.fromVideoFrame(frame, YuvFrame.PROCESSING_NONE, frame.timestampNs)
+            val bitmap = yuv.toBitmap()
 
             val processedFrame = if (bitmap != null) {
                 val processedBitmap = frameProcessor.process(bitmap)
