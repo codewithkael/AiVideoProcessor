@@ -5,7 +5,7 @@ import com.codewithkael.aivideoprocessor.config.AiVideoProcessorConfig
 import com.codewithkael.aivideoprocessor.frame.FrameProcessor
 import com.codewithkael.aivideoprocessor.frame.defaultFrameProcessingHelpers
 import io.github.crow_misia.libyuv.AbgrBuffer
-import io.github.crow_misia.libyuv.Nv21Buffer
+import io.github.crow_misia.libyuv.PlanePrimitive
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -52,15 +52,10 @@ class AiVideoCapturerObserver(
 
         scope.launch {
             try {
-                val nv21 = toNv21(frame)
-                val bitmap = nv21ToBitmap(nv21)
-
-                val processedFrame = if (bitmap != null) {
-                    val processedBitmap = frameProcessor.process(bitmap)
-                    AiVideoFrameFactory.fromBitmap(processedBitmap, frame.rotation)
-                } else {
-                    frame
-                }
+                // High-performance conversion using libyuv
+                val bitmap = i420ToBitmap(frame)
+                val processedBitmap = frameProcessor.process(bitmap)
+                val processedFrame = AiVideoFrameFactory.fromBitmap(processedBitmap, frame.rotation)
 
                 withContext(Dispatchers.Main) {
                     downstream.onFrameCaptured(processedFrame)
@@ -72,63 +67,32 @@ class AiVideoCapturerObserver(
         }
     }
 
-    private fun toNv21(frame: VideoFrame): Nv21Buffer? {
+    private fun i420ToBitmap(frame: VideoFrame): android.graphics.Bitmap {
         val buffer = frame.buffer.toI420()
         val width = buffer.width
         val height = buffer.height
 
-        val nv21 = Nv21Buffer.allocate(width, height)
-        val nv21Buf = nv21.asBuffer()
+        // Wrap WebRTC I420Buffer into LibYuv I420Buffer using PlanePrimitive
+        val planeY = PlanePrimitive.create(buffer.strideY, buffer.dataY)
+        val planeU = PlanePrimitive.create(buffer.strideU, buffer.dataU)
+        val planeV = PlanePrimitive.create(buffer.strideV, buffer.dataV)
+        
+        val libyuvI420 = io.github.crow_misia.libyuv.I420Buffer.wrap(
+            planeY, planeU, planeV, width, height
+        )
 
-        val yPlane = buffer.dataY
-        val uPlane = buffer.dataU
-        val vPlane = buffer.dataV
-        val yStride = buffer.strideY
-        val uStride = buffer.strideU
-        val vStride = buffer.strideV
-
-        val sizeY = width * height
-        val chromaWidth = (width + 1) / 2
-        val chromaHeight = (height + 1) / 2
-        val chromaStride = width
-
-        // Y
-        for (y in 0 until height) {
-            val rowStart = y * yStride
-            for (x in 0 until width) {
-                nv21Buf.put(y * width + x, yPlane[rowStart + x])
-            }
-        }
-
-        // UV interleaved (VU for NV21)
-        for (y in 0 until chromaHeight) {
-            val uRowStart = y * uStride
-            val vRowStart = y * vStride
-            for (x in 0 until chromaWidth) {
-                val u = uPlane[uRowStart + x]
-                val v = vPlane[vRowStart + x]
-                val index = sizeY + y * chromaStride + 2 * x
-                nv21Buf.put(index, v)
-                nv21Buf.put(index + 1, u)
-            }
-        }
-
-        buffer.release()
-        return nv21
-    }
-
-    private fun nv21ToBitmap(nv21: Nv21Buffer?): android.graphics.Bitmap? {
-        if (nv21 == null) return null
-
-        val width = nv21.width
-        val height = nv21.height
-
+        // Use libyuv for high-performance I420 -> ABGR conversion
         val abgr = AbgrBuffer.allocate(width, height)
-        nv21.convertTo(abgr)
-
+        
+        // Native libyuv conversion call
+        libyuvI420.convertTo(abgr)
+        
         val bitmap = android.graphics.Bitmap.createBitmap(width, height, android.graphics.Bitmap.Config.ARGB_8888)
         bitmap.copyPixelsFromBuffer(abgr.asBuffer())
 
+        abgr.close()
+        libyuvI420.close()
+        buffer.release()
         return bitmap
     }
 }
