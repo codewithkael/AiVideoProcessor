@@ -49,24 +49,30 @@ class AiVideoCapturerObserver(
 
         isProcessing = true
 
+        // Retain the frame while processing off-thread
+        frame.retain()
+
         scope.launch {
-            val yuv = YuvFrame()
-            yuv.fromVideoFrame(frame, YuvFrame.PROCESSING_NONE, frame.timestampNs)
-            val bitmap = yuv.toBitmap()
+            try {
+                val yuv = YuvFrame()
+                yuv.fromVideoFrame(frame, YuvFrame.PROCESSING_NONE, frame.timestampNs)
+                val bitmap = yuv.toBitmap()
 
-            val processedFrame = if (bitmap != null) {
-                val processedBitmap = frameProcessor.process(bitmap)
-                // Reuse original rotation; timestamp updated to now
-                AiVideoFrameFactory.fromBitmap(processedBitmap, frame.rotation)
-            } else {
-                frame
+                val processedFrame = if (bitmap != null) {
+                    val processedBitmap = frameProcessor.process(bitmap)
+                    // Reuse original rotation; timestamp updated to now
+                    AiVideoFrameFactory.fromBitmap(processedBitmap, frame.rotation)
+                } else {
+                    frame
+                }
+
+                withContext(Dispatchers.Main) {
+                    downstream.onFrameCaptured(processedFrame)
+                }
+            } finally {
+                frame.release()
+                isProcessing = false
             }
-
-            withContext(Dispatchers.Main) {
-                downstream.onFrameCaptured(processedFrame)
-            }
-
-            isProcessing = false
         }
     }
 }
