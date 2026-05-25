@@ -40,4 +40,7 @@ dependencies {
 
     // LibYUV-Android for YUV<->ARGB conversions
     implementation("io.github.crow-misia.libyuv:libyuv-android:0.43.2")
+
+    // HokoBlur for background blur effect
+    implementation("io.github.hokofly:hoko-blur:1.5.3")
 }
