@@ -11,7 +11,6 @@ import com.codewithkael.aivideoprocessor.effect.watermark.WatermarkDrawer
 import com.codewithkael.aivideoprocessor.ml.SegmentationEngine
 
 class FrameProcessor(
-    private val config: AiVideoProcessorConfig,
     private val effects: List<VideoEffect>
 ) {
     suspend fun process(input: Bitmap): Bitmap {
@@ -54,7 +53,7 @@ class FrameProcessor(
                     )
                 }
             }
-            return FrameProcessor(config, effects)
+            return FrameProcessor(effects)
         }
     }
 }
@@ -64,8 +63,3 @@ data class FrameProcessingHelpers(
     val segmentationEngineFactory: () -> SegmentationEngine,
     val watermarkDrawer: WatermarkDrawer
 )
-
-interface FrameConverters {
-    fun videoFrameToBitmap(frame: org.webrtc.VideoFrame): Bitmap?
-    fun bitmapToVideoFrame(bitmap: Bitmap, originalFrame: org.webrtc.VideoFrame): org.webrtc.VideoFrame
-}
