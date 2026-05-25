@@ -12,6 +12,7 @@ fun defaultFrameProcessingHelpers(
     context: Context
 ): FrameProcessingHelpers {
     return FrameProcessingHelpers(
+        appContext = context,
         segmentationEngineFactory = { MlKitSegmentationEngine(context) },
         watermarkDrawer = SimpleWatermarkDrawer()
     )
