@@ -1,55 +1,80 @@
 package com.codewithkael.aivideoprocessor.capture
 
 import android.graphics.Bitmap
+import org.webrtc.JavaI420Buffer
 import org.webrtc.VideoFrame
+import java.nio.ByteBuffer
 
 /**
- * Simple factory to create WebRTC [VideoFrame] instances from processed [Bitmap]s.
+ * Factory to create WebRTC [VideoFrame] instances from processed [Bitmap]s.
  *
- * This is intentionally minimal; host apps can adapt or replace this if they have
- * a more efficient pipeline. For now, we just wrap the bitmap using
- * VideoFrame.Buffer and propagate rotation.
+ * Converts the bitmap to an I420 buffer so that downstream WebRTC components
+ * (VideoProcessor, VideoSource) can safely crop/scale frames.
  */
 object AiVideoFrameFactory {
 
     fun fromBitmap(bitmap: Bitmap, rotation: Int): VideoFrame {
-        val buffer: VideoFrame.Buffer = BitmapVideoFrameBuffer(bitmap)
-        return VideoFrame(buffer, rotation, System.nanoTime())
-    }
-}
-
-/**
- * Very basic VideoFrame.Buffer implementation that wraps a [Bitmap].
- * In a real app, you may want a GPU-backed buffer for performance.
- */
-class BitmapVideoFrameBuffer(
-    private val bitmap: Bitmap
-) : VideoFrame.Buffer {
-
-    override fun getWidth(): Int = bitmap.width
-
-    override fun getHeight(): Int = bitmap.height
-
-    override fun toI420(): VideoFrame.I420Buffer {
-        throw UnsupportedOperationException("BitmapVideoFrameBuffer.toI420 is not implemented")
+        val i420 = convertBitmapToI420Buffer(bitmap)
+        return VideoFrame(i420, rotation, System.nanoTime())
     }
 
-    override fun retain() {
-        // no-op; nothing to retain
-    }
+    private fun convertBitmapToI420Buffer(bitmap: Bitmap): JavaI420Buffer {
+        val width = bitmap.width
+        val height = bitmap.height
 
-    override fun release() {
-        // no-op; caller owns bitmap lifecycle
-    }
+        val argb = IntArray(width * height)
+        bitmap.getPixels(argb, 0, width, 0, 0, width, height)
 
-    override fun cropAndScale(
-        x: Int,
-        y: Int,
-        width: Int,
-        height: Int,
-        scaledWidth: Int,
-        scaledHeight: Int
-    ): VideoFrame.Buffer {
-        throw UnsupportedOperationException("BitmapVideoFrameBuffer.cropAndScale is not implemented")
+        val ySize = width * height
+        val uvSize = width * height / 4
+
+        val yBuffer = ByteBuffer.allocateDirect(ySize)
+        val uBuffer = ByteBuffer.allocateDirect(uvSize)
+        val vBuffer = ByteBuffer.allocateDirect(uvSize)
+
+        val y = ByteArray(ySize)
+        val u = ByteArray(uvSize)
+        val v = ByteArray(uvSize)
+
+        var yIndex = 0
+        var uvIndex = 0
+        for (i in 0 until height) {
+            for (j in 0 until width) {
+                val color = argb[i * width + j]
+                val r = (color shr 16) and 0xff
+                val g = (color shr 8) and 0xff
+                val b = color and 0xff
+
+                val yValue = (0.299 * r + 0.587 * g + 0.114 * b).toInt()
+                val uValue = (-0.169 * r - 0.331 * g + 0.5 * b + 128).toInt()
+                val vValue = (0.5 * r - 0.419 * g - 0.081 * b + 128).toInt()
+
+                y[yIndex++] = yValue.toByte()
+                if (i % 2 == 0 && j % 2 == 0) {
+                    u[uvIndex] = uValue.toByte()
+                    v[uvIndex] = vValue.toByte()
+                    uvIndex++
+                }
+            }
+        }
+
+        yBuffer.put(y)
+        uBuffer.put(u)
+        vBuffer.put(v)
+        yBuffer.rewind()
+        uBuffer.rewind()
+        vBuffer.rewind()
+
+        return JavaI420Buffer.wrap(
+            width,
+            height,
+            yBuffer,
+            width,
+            uBuffer,
+            width / 2,
+            vBuffer,
+            width / 2,
+            null
+        )
     }
 }
