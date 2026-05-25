@@ -39,19 +39,22 @@ class SimpleWatermarkDrawer : WatermarkDrawer {
         val frameWidth = frame.width.toFloat()
         val frameHeight = frame.height.toFloat()
 
-        val targetWidth = frameWidth * config.bitmapScale
+        // 1. Calculate target size (preserving aspect ratio)
+        val clampedSizeFraction = config.bitmapScale.coerceIn(0.01f, 1.0f)
+        val targetWidth = (frameWidth * clampedSizeFraction).toInt().coerceAtLeast(1)
         val aspectRatio = watermark.width.toFloat() / watermark.height.toFloat()
-        val targetHeight = targetWidth / aspectRatio
+        val targetHeight = (targetWidth / aspectRatio).toInt().coerceAtLeast(1)
 
-        val scaled = Bitmap.createScaledBitmap(
-            watermark,
-            targetWidth.toInt().coerceAtLeast(1),
-            targetHeight.toInt().coerceAtLeast(1),
-            true
-        )
+        // 2. Scale bitmap only if necessary
+        val scaled = if (targetWidth == watermark.width && targetHeight == watermark.height) {
+            watermark
+        } else {
+            Bitmap.createScaledBitmap(watermark, targetWidth, targetHeight, true)
+        }
 
         val marginPx = dpToPx(frame, config.marginDp)
 
+        // 3. Calculate position
         val left: Float
         val top: Float
 
@@ -78,11 +81,15 @@ class SimpleWatermarkDrawer : WatermarkDrawer {
             }
         }
 
+        // 4. Safety clamp to ensure it stays on screen
+        val safeLeft = left.coerceIn(0f, (frameWidth - scaled.width).coerceAtLeast(0f))
+        val safeTop = top.coerceIn(0f, (frameHeight - scaled.height).coerceAtLeast(0f))
+
         val paint = Paint(Paint.ANTI_ALIAS_FLAG).apply {
             alpha = (config.alpha * 255).toInt().coerceIn(0, 255)
         }
 
-        canvas.drawBitmap(scaled, left, top, paint)
+        canvas.drawBitmap(scaled, safeLeft, safeTop, paint)
     }
 
     private fun drawTextWatermark(
@@ -114,6 +121,7 @@ class SimpleWatermarkDrawer : WatermarkDrawer {
 
         val marginPx = dpToPx(frame, config.marginDp)
 
+        // Text Y is baseline-based, so we adjust TOP positions by textHeight
         val x: Float
         val y: Float
 
@@ -140,7 +148,11 @@ class SimpleWatermarkDrawer : WatermarkDrawer {
             }
         }
 
-        canvas.drawText(text, x, y, paint)
+        // Safety clamp for text
+        val safeX = x.coerceIn(0f, (frameWidth - textWidth).coerceAtLeast(0f))
+        val safeY = y.coerceIn(textHeight, frameHeight.coerceAtLeast(textHeight))
+
+        canvas.drawText(text, safeX, safeY, paint)
     }
 
     private fun dpToPx(bitmap: Bitmap, dp: Float): Float {
