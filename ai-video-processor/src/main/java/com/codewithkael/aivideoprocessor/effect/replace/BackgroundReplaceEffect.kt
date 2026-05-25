@@ -4,6 +4,7 @@ import android.graphics.Bitmap
 import android.graphics.Canvas
 import android.graphics.Matrix
 import com.codewithkael.aivideoprocessor.config.replace.ReplaceBackgroundConfig
+import com.codewithkael.aivideoprocessor.config.shared.BackgroundScaleType
 import com.codewithkael.aivideoprocessor.ml.SegmentationEngine
 import com.codewithkael.aivideoprocessor.ml.SegmentationMask
 
@@ -22,9 +23,10 @@ class BackgroundReplaceEffect(
         val width = input.width
         val height = input.height
 
-        val bgPrepared = when (config.scaleMode) {
-            ReplaceBackgroundConfig.ScaleMode.CENTER_CROP -> centerCrop(background, width, height)
-            ReplaceBackgroundConfig.ScaleMode.STRETCH -> Bitmap.createScaledBitmap(background, width, height, true)
+        val bgPrepared = when (config.scaleType) {
+            BackgroundScaleType.CROP -> centerCrop(background, width, height)
+            BackgroundScaleType.FIT, BackgroundScaleType.FILL ->
+                Bitmap.createScaledBitmap(background, width, height, true)
         }
 
         val output = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
