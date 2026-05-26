@@ -35,7 +35,7 @@ Add the dependency to your app's `build.gradle`:
 
 ```kotlin
 dependencies {
-    implementation("com.github.MasoudSarabadani:AiVideoProcessor:latest-tag")
+    implementation("com.github.codewithkael:AiVideoProcessor:latest-tag")
 }
 ```
 
