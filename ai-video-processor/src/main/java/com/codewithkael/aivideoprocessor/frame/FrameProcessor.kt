@@ -77,4 +77,14 @@ data class FrameProcessingHelpers(
     val appContext: Context,
     val segmentationEngineFactory: () -> SegmentationEngine,
     val watermarkDrawer: WatermarkDrawer
-)
+) {
+    companion object {
+        /**
+         * Creates a default implementation of helpers using ML Kit and standard drawers.
+         * Most users should use this factory method.
+         */
+        fun default(context: Context): FrameProcessingHelpers {
+            return defaultFrameProcessingHelpers(context)
+        }
+    }
+}
